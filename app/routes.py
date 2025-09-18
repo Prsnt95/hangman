@@ -1,18 +1,17 @@
-
-
-    
+# app/routes.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import Game, Base
-from app.db import SessionLocal, engine
+from app.db import SessionLocal, engine, Base
+from app.models import User, Word, Game, Guess
+from fastapi import HTTPException
 
 router = APIRouter()
 
-# Ensure tables exist
+# Create all tables
 Base.metadata.create_all(bind=engine)
 
-# Dependency to get DB session
+# DB session dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -20,28 +19,47 @@ def get_db():
     finally:
         db.close()
 
-# Test route
+# Simple test route
 @router.get("/")
 def root():
-    return{"hello" : "world"}
+    return {"hello": "world"}
 
+# Test DB route
+@router.get("/test-db")
+def test_db(db: Session = Depends(get_db)):
+    game_count = db.query(func.count(Game.id)).scalar()
 
+    if game_count == 0:
+        # Create test user
+        test_user = User(username="testuser")
+        db.add(test_user)
+        db.commit()
+        db.refresh(test_user)
 
-# Optional: Create a game to test insert
-@router.get("/start")
-def start_game(word: str | None = None, db: Session = Depends(get_db)):
-    # If no word provided, pick a random existing word from games table
+        # Create test word
+        test_word = Word(text="example")
+        db.add(test_word)
+        db.commit()
+        db.refresh(test_word)
+
+        # Create test game
+        test_game = Game(user_id=test_user.id, word_id=test_word.id)
+        db.add(test_game)
+        db.commit()
+        db.refresh(test_game)
+
+        return {
+            "message": "Test data created",
+            "user": {"id": test_user.id, "username": test_user.username},
+            "word": {"id": test_word.id, "text": test_word.text},
+            "game": {"id": test_game.id, "status": test_game.status},
+        }
+
+    return {"message": f"Database already has {game_count} game(s)"}
+
+@router.get("/get-word/{word_id}")
+def get_word(word_id: int, db: Session = Depends(get_db)):
+    word = db.query(Word).filter(Word.id == word_id).first()
     if not word:
-        # Try to select a random word from existing games
-        random_game = db.query(Game).order_by(func.random()).first()
-        if random_game and random_game.word:
-            word = random_game.word
-        else:
-            # Fallback default if DB has no words
-            word = "test"
-
-    new_game = Game(word=word)
-    db.add(new_game)
-    db.commit()
-    db.refresh(new_game)
-    return {"id": new_game.id, "word": new_game.word}
+        raise HTTPException(status_code=404, detail="Word not found")
+    return {"id": word.id, "text": word.text, "difficulty": word.difficulty}
