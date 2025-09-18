@@ -13,6 +13,8 @@ services:
     command: ["tail", "-f", "/dev/null"]
     ports:
       - "8000:8000"
+      - "3000:3000"  # Add this line for React frontend
+
     environment:
       - DATABASE_URL=postgresql+asyncpg://hangman_user:hangman_pass@db:5432/hangman_db
     depends_on:

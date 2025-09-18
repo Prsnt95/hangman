@@ -13,10 +13,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN apt-get update && apt-get install -y \
     postgresql-client \
     git \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
+RUN node --version && npm --version
 
 # Expose FastAPI port
-EXPOSE 8000
+EXPOSE 8000 3000
 
 # Default command (can override in compose)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--reload"]
