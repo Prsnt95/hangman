@@ -1,0 +1,16 @@
+{
+    "name": "Hangman Dev Container",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "hangman",
+    "workspaceFolder": "/workspace",
+    "forwardPorts": [8000, 5432, 8080],
+    "postCreateCommand": "pip install --no-cache-dir -r requirements.txt",
+    "remoteUser": "root",
+    "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer,target=/workspace/.devcontainer,type=bind",
+    "source=${localWorkspaceFolder}/docker-compose.yml,target=/workspace/docker-compose.yml,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+
+]
+
+}
